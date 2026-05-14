@@ -6,7 +6,7 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [theme, setTheme] = useState('dark');
-  const [status, setStatus] = useState({ state: 'idle', heading: 'IDLE', sub: 'Awaiting file selection' });
+  const [status, setStatus] = useState({ state: 'idle', heading: 'Idle', sub: 'Awaiting file selection' });
   const [progress, setProgress] = useState(0);
   const [logs, setLog] = useState([{ time: '--', msg: 'System initialized.', type: '' }]);
   const [sessionId, setSessionId] = useState('');
@@ -28,26 +28,26 @@ export default function Home() {
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files);
     setFiles(prev => [...prev, ...newFiles]);
-    setStatus({ state: 'ready', heading: 'READY', sub: `${newFiles.length + files.length} file(s) queued` });
-    newFiles.forEach(f => addLog(`Linked: ${f.name}`));
+    setStatus({ state: 'ready', heading: 'Ready', sub: `${newFiles.length + files.length} file(s) queued` });
+    newFiles.forEach(f => addLog(`Queued: ${f.name}`));
   };
 
   const removeFile = (index) => {
     const updatedFiles = files.filter((_, i) => i !== index);
     setFiles(updatedFiles);
     addLog(`Removed item`, 'err');
-    if (updatedFiles.length === 0) setStatus({ state: 'idle', heading: 'IDLE', sub: 'Awaiting file selection' });
+    if (updatedFiles.length === 0) setStatus({ state: 'idle', heading: 'Idle', sub: 'Awaiting file selection' });
   };
 
   const uploadFiles = async () => {
     if (uploading || files.length === 0) return;
     setUploading(true);
     setProgress(0);
-    setStatus({ state: 'uploading', heading: 'UPLOADING', sub: 'Transferring to Drive' });
+    setStatus({ state: 'uploading', heading: 'Uploading...', sub: 'Transferring to Drive' });
 
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
-      addLog(`Sending: ${f.name}`);
+      addLog(`Uploading: ${f.name}`);
       const formData = new FormData();
       formData.append('file', f);
 
@@ -62,7 +62,7 @@ export default function Home() {
       setProgress(Math.round(((i + 1) / files.length) * 100));
     }
 
-    setStatus({ state: 'success', heading: 'SUCCESS', sub: 'Upload finalized' });
+    setStatus({ state: 'success', heading: 'Success', sub: 'Upload complete' });
     setTimeout(() => { setFiles([]); setUploading(false); setProgress(0); }, 3000);
   };
 
@@ -151,6 +151,7 @@ export default function Home() {
               </div>
 
               <div className="btn-section">
+                {progress > 0 && <div className="bar-bg"><div className="bar-fill" style={{width: `${progress}%`}}></div></div>}
                 <button className="upload-btn" onClick={uploadFiles} disabled={uploading || files.length === 0}>
                   UPLOAD TO DRIVE <div className="btn-arrow">→</div>
                 </button>
@@ -163,10 +164,10 @@ export default function Home() {
             <div className="status-main">
               <div className="status-state">
                 <div className="status-icon-wrap">
-                  {uploading && <div className="spinner-ring" style={{display: 'block'}}></div>}
+                  {uploading && <div className="spinner-ring"></div>}
                   <div className={`status-icon ${status.state}`} style={{display: uploading ? 'none' : 'flex'}}>
-                    <svg viewBox="0 0 16 16">
-                      {status.state === 'idle' ? <line x1="4" y1="8" x2="12" y2="8" strokeLinecap="round"/> : <polyline points="3,8 7,12 13,4" strokeLinecap="round" strokeLinejoin="round"/>}
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor">
+                      {status.state === 'idle' ? <line x1="4" y1="8" x2="12" y2="8" strokeLinecap="round" strokeWidth="2"/> : <polyline points="3,8 7,12 13,4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>}
                     </svg>
                   </div>
                 </div>
@@ -235,12 +236,35 @@ export default function Home() {
           --glow: 0 0 3px rgba(0,128,0,0.15), 0 0 8px rgba(0,128,0,0.08);
         }
 
-        body { background: radial-gradient(circle at top, rgba(0,255,128,0.08), transparent 40%), var(--bg); color: var(--text); font-family: 'Orbitron', sans-serif; margin: 0; transition: 0.4s ease; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-        
+        body { 
+          background: radial-gradient(circle at top, rgba(0,255,128,0.08), transparent 40%), var(--bg); 
+          color: var(--text); 
+          font-family: 'Orbitron', sans-serif; 
+          margin: 0; 
+          transition: background 0.4s ease, color 0.4s ease; 
+          overflow-x: hidden; 
+          -webkit-font-smoothing: antialiased; 
+        }
+
         .space-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-        .shooting-star { position: absolute; width: 150px; height: 2px; background: linear-gradient(90deg, var(--star-color), transparent); box-shadow: 0 0 10px var(--star-color); opacity: 0; animation: shoot 6s linear infinite; }
-        @keyframes shoot { 0% { transform: rotate(-35deg) translateX(0); opacity: 0; } 10% { opacity: 0.6; } 30% { transform: rotate(-35deg) translateX(-1500px); opacity: 0; } 100% { opacity: 0; } }
-        ${[...Array(12)].map((_, i) => ` .shooting-star:nth-child(${i+1}) { top: ${Math.random()*100}%; left: ${80+Math.random()*20}%; animation-delay: ${Math.random()*15}s; } `).join('')}
+        .shooting-star {
+          position: absolute; width: 150px; height: 2px;
+          background: linear-gradient(90deg, var(--star-color), transparent);
+          box-shadow: 0 0 10px var(--star-color);
+          opacity: 0; animation: shoot 6s linear infinite;
+        }
+        @keyframes shoot {
+          0% { transform: rotate(-35deg) translateX(0); opacity: 0; }
+          10% { opacity: 0.6; }
+          30% { transform: rotate(-35deg) translateX(-1500px); opacity: 0; }
+          100% { opacity: 0; }
+        }
+        ${[...Array(12)].map((_, i) => `
+          .shooting-star:nth-child(${i+1}) {
+            top: ${Math.random()*100}%; left: ${80 + Math.random()*20}%;
+            animation-delay: ${Math.random()*15}s;
+          }
+        `).join('')}
 
         .header { position: fixed; top:0; left:0; right:0; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; background: rgba(0, 15, 0, 0.82); border-bottom: 1px solid var(--border); z-index: 100; backdrop-filter: blur(12px); box-shadow: var(--glow); }
         .brand-text { font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; opacity: 0.9; text-shadow: var(--glow); }
@@ -266,7 +290,7 @@ export default function Home() {
         .drop-zone.drag-over { background: rgba(0,255,128,0.08); border-color: #00ff99; box-shadow: 0 0 25px rgba(0,255,128,0.2); }
         
         .upload-icon-wrap-main { width: 72px; height: 72px; margin: 0 auto 28px; display: flex; align-items: center; justify-content: center; position: relative; }
-        .upload-icon-wrap-main::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; background: rgba(0,255,128,0.08); box-shadow: 0 0 20px rgba(0,255,128,0.35); }
+        .upload-icon-wrap-main::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; background: rgba(0,255,128,0.08); box-shadow: 0 0 20px rgba(0,255,128,0.35), 0 0 40px rgba(0,255,128,0.15); }
         .upload-icon-wrap-main svg { width: 48px; height: 48px; stroke: #00ff99; filter: drop-shadow(0 0 10px rgba(0,255,128,0.9)); }
         
         .drop-text { font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.18em; text-shadow: var(--glow); }
@@ -275,22 +299,31 @@ export default function Home() {
         .file-list-section { padding: 20px 28px; min-height: 80px; }
         .file-list-label { font-family: var(--mono); font-size: 10px; opacity: 0.3; margin-bottom: 12px; }
         .file-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(0,255,128,0.04); border: 1px solid rgba(0,255,128,0.12); margin-bottom: 8px; }
-        .file-name { font-size: 12px; font-weight: 700; }
-        .file-remove { color: var(--primary); cursor: pointer; }
+        .file-name { font-size: 12px; font-weight: 700; color: var(--text); }
+        .file-size { font-family: var(--mono); font-size: 10px; opacity: 0.4; }
+        .file-remove { color: var(--primary); cursor: pointer; font-weight: bold; }
         
         .upload-btn { width: 100%; padding: 18px 32px; background: linear-gradient(135deg, #008000, #00aa55); border: 1px solid rgba(0,255,128,0.4); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.16em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 14px; box-shadow: 0 0 12px rgba(0,255,128,0.4); }
         .upload-btn:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(0,255,128,0.6); }
         .upload-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
+        .bar-bg { height: 2px; background: rgba(0,255,128,0.08); margin-bottom: 10px; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, #008000, #00ff99); transition: 0.4s; box-shadow: 0 0 10px rgba(0,255,128,0.8); }
+
         .right-panel { padding-left: 40px; }
         .status-label { font-family: var(--mono); font-size: 10px; opacity: 0.3; text-transform: uppercase; margin-bottom: 24px; border-bottom: 0.5px solid var(--border); padding-bottom: 5px; }
         .status-card { background: var(--panel); border: 1px solid var(--border-strong); padding: 20px; box-shadow: var(--glow); margin-bottom: 30px; }
         .status-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 0.5px solid; box-shadow: var(--glow); }
+        .status-icon.idle { border-color: rgba(0,255,128,0.2); }
         .status-icon.ready, .status-icon.success { border-color: rgba(0,255,128,0.4); background: rgba(0,255,128,0.08); }
         .status-icon.ready svg, .status-icon.success svg { stroke: #00ff99; }
+        
         .mini-pct { font-size: 42px; font-weight: 900; color: #00ff99; text-shadow: var(--glow); }
         .mini-bar { height: 2px; background: rgba(0,255,128,0.08); }
         .mini-bar-fill { height: 100%; background: linear-gradient(90deg, #008000, #00ff99); box-shadow: 0 0 10px rgba(0,255,128,0.8); }
+
+        .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid var(--border); font-family: var(--mono); font-size: 10px; }
+        .stat-val.ok { color: #00ff99; } .stat-val.warn { color: var(--primary); }
 
         .log-section { margin-top: 40px; }
         .log-entries { font-family: var(--mono); font-size: 10.5px; opacity: 0.6; }
