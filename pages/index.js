@@ -6,7 +6,7 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [theme, setTheme] = useState('dark');
-  const [status, setStatus] = useState({ state: 'idle', heading: 'IDLE', sub: 'Awaiting selection' });
+  const [status, setStatus] = useState({ state: 'idle', heading: 'Idle', sub: 'Awaiting file selection' });
   const [progress, setProgress] = useState(0);
   const [logs, setLog] = useState([{ time: '--', msg: 'System initialized.', type: '' }]);
   const [sessionId, setSessionId] = useState('');
@@ -28,33 +28,33 @@ export default function Home() {
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files);
     setFiles(prev => [...prev, ...newFiles]);
-    setStatus({ state: 'ready', heading: 'READY', sub: `${newFiles.length + files.length} item(s) staged` });
-    newFiles.forEach(f => addLog(`Linked: ${f.name}`));
+    setStatus({ state: 'ready', heading: 'Ready', sub: `${newFiles.length + files.length} file(s) queued` });
+    newFiles.forEach(f => addLog(`Queued: ${f.name}`));
   };
 
   const removeFile = (index) => {
     const updatedFiles = files.filter((_, i) => i !== index);
     setFiles(updatedFiles);
     addLog(`Removed item`, 'err');
-    if (updatedFiles.length === 0) setStatus({ state: 'idle', heading: 'IDLE', sub: 'Awaiting selection' });
+    if (updatedFiles.length === 0) setStatus({ state: 'idle', heading: 'Idle', sub: 'Awaiting file selection' });
   };
 
   const uploadFiles = async () => {
     if (uploading || files.length === 0) return;
     setUploading(true);
     setProgress(0);
-    setStatus({ state: 'uploading', heading: 'UPLOADING', sub: 'Transferring to Drive' });
+    setStatus({ state: 'uploading', heading: 'Uploading...', sub: 'Transferring to Drive' });
 
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
-      addLog(`Sending: ${f.name}`);
+      addLog(`Uploading: ${f.name}`);
       const formData = new FormData();
       formData.append('file', f);
 
       try {
         const res = await fetch('/api/upload', { method: 'POST', body: formData });
         const data = await res.json();
-        if (data.success) addLog(`Success: ${f.name}`, 'ok');
+        if (data.success) addLog(`Transferred: ${f.name}`, 'ok');
         else throw new Error(data.error);
       } catch (err) {
         addLog(`Error: ${err.message}`, 'err');
@@ -62,7 +62,7 @@ export default function Home() {
       setProgress(Math.round(((i + 1) / files.length) * 100));
     }
 
-    setStatus({ state: 'success', heading: 'SUCCESS', sub: 'Sync complete' });
+    setStatus({ state: 'success', heading: 'Success', sub: 'Upload complete' });
     setTimeout(() => { setFiles([]); setUploading(false); setProgress(0); }, 3000);
   };
 
@@ -75,7 +75,7 @@ export default function Home() {
   return (
     <div className="app-container">
       <Head>
-        <title>RETRO CLOUD DROP</title>
+        <title>SECURE CLOUD DROP</title>
         <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/d/d5/Google_Gemma_logo.svg" />
       </Head>
 
@@ -132,10 +132,10 @@ export default function Home() {
               <div className="panel-divider"></div>
 
               <div className="file-list-section">
-                <div className="file-list-label">STAGED FILES</div>
+                <div className="file-list-label">READY TO UPLOAD</div>
                 <div className="file-list">
                   {files.length === 0 ? (
-                    <div className="empty-list">No files selected</div>
+                    <div className="empty-list">No files selected — add files above</div>
                   ) : (
                     files.map((f, i) => (
                       <div className="file-item" key={i}>
@@ -159,13 +159,13 @@ export default function Home() {
           </div>
 
           <div className="right-panel">
-            <div className="status-label">SYSTEM_STATUS</div>
+            <div className="status-label">UPLOAD STATUS</div>
             <div className="status-main">
               <div className="status-state">
                 <div className="status-icon-wrap">
-                  {uploading && <div className="spinner-ring"></div>}
+                  {uploading && <div className="spinner-ring" style={{display: 'block'}}></div>}
                   <div className={`status-icon ${status.state}`} style={{display: uploading ? 'none' : 'flex'}}>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor">
+                    <svg viewBox="0 0 16 16">
                       {status.state === 'idle' ? <line x1="4" y1="8" x2="12" y2="8" strokeLinecap="round" strokeWidth="2"/> : <polyline points="3,8 7,12 13,4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>}
                     </svg>
                   </div>
@@ -186,8 +186,9 @@ export default function Home() {
 
             <div className="stats-section">
               <div className="stat-row"><span className="stat-key">Auth</span><span className="stat-val ok">Connected</span></div>
-              <div className="stat-row"><span className="stat-key">Quota</span><span className="stat-val">Unlimited</span></div>
-              <div className="stat-row"><span className="stat-key">Session</span><span className="stat-val">{sessionId}</span></div>
+              <div className="stat-row"><span className="stat-key">Destination</span><span className="stat-val">My Drive / uploads/</span></div>
+              <div className="stat-row"><span className="stat-key">Encryption</span><span className="stat-val ok">AES-256</span></div>
+              <div className="stat-row"><span className="stat-key">Session</span><span className="stat-val warn">{sessionId}</span></div>
             </div>
 
             <div className="log-section">
@@ -195,7 +196,7 @@ export default function Home() {
               <div className="log-entries">
                 {logs.map((l, i) => (
                   <div className="log-entry" key={i}>
-                    <span className="log-time">[{l.time}]</span>
+                    <span className="log-time">--</span>
                     <span className={`log-msg ${l.type}`}>{l.msg}</span>
                   </div>
                 ))}
@@ -209,35 +210,19 @@ export default function Home() {
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
         :root {
-          --primary: #BE5103;
-          --accent: #069494;
-          --yellow: #FFCE1B;
-          --maroon: #B7410E;
-          --bg: #1a0f00;
-          --panel: rgba(40, 20, 0, 0.8);
-          --text: #FFCE1B;
-          --border: rgba(255, 206, 27, 0.1);
-          --star-color: #FFCE1B;
+          --primary: #BE5103; --accent: #069494; --yellow: #FFCE1B; --maroon: #B7410E;
+          --bg: #1a0f00; --panel: rgba(40, 20, 0, 0.85); --text: #FFCE1B;
+          --border: rgba(255, 206, 27, 0.1); --star-color: #fff;
         }
 
         [data-theme='light'] {
-          --bg: #fffbf0;
-          --panel: rgba(255, 255, 255, 0.9);
-          --text: #B7410E;
-          --border: rgba(183, 65, 14, 0.2);
-          --star-color: #000000;
+          --bg: #fffbf0; --panel: rgba(255, 255, 255, 0.9); --text: #B7410E;
+          --border: rgba(183, 65, 14, 0.2); --star-color: #000;
         }
 
-        body { 
-          background: var(--bg); 
-          color: var(--text); 
-          font-family: 'Space Grotesk', sans-serif; 
-          margin: 0; 
-          transition: background 0.4s ease, color 0.4s ease; 
-          overflow-x: hidden; 
-        }
-
-        .space-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(circle at bottom right, var(--maroon), transparent 50%); }
+        body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; margin: 0; transition: 0.4s; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+        
+        .space-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
         .shooting-star {
           position: absolute; width: 150px; height: 2px;
           background: linear-gradient(90deg, var(--star-color), transparent);
@@ -245,63 +230,79 @@ export default function Home() {
           opacity: 0; animation: shoot 6s linear infinite;
         }
         @keyframes shoot { 0% { transform: rotate(-35deg) translateX(0); opacity: 0; } 10% { opacity: 0.6; } 30% { transform: rotate(-35deg) translateX(-1500px); opacity: 0; } 100% { opacity: 0; } }
-        ${[...Array(12)].map((_, i) => ` .shooting-star:nth-child(${i+1}) { top: ${Math.random()*100}%; left: ${80 + Math.random()*20}%; animation-delay: ${Math.random()*15}s; } `).join('')}
-
-        .header { position: fixed; top:0; left:0; right:0; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; border-bottom: 1px solid var(--border); z-index: 100; backdrop-filter: blur(12px); }
-        .brand-text { font-family: 'Space Grotesk'; font-weight: 700; font-size: 14px; letter-spacing: 2px; }
-        .dot { width: 8px; height: 8px; background: var(--maroon); border-radius: 50%; margin-right: 10px; display: inline-block; }
+        ${[...Array(12)].map((_, i) => ` .shooting-star:nth-child(${i+1}) { top: ${Math.random()*100}%; left: ${80+Math.random()*20}%; animation-delay: ${Math.random()*15}s; } `).join('')}
         
-        .toggle-wrap { display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono'; font-size: 10px; }
-        .toggle { width: 36px; height: 18px; border-radius: 9px; background: var(--border); position: relative; cursor: pointer; border: 1px solid var(--border); }
+        .header { position: fixed; top:0; left:0; right:0; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; background: rgba(13,11,11,0.92); border-bottom: 0.5px solid var(--border); z-index: 100; backdrop-filter: blur(12px); }
+        .brand-text { font-family: 'Space Grotesk'; font-weight: 700; font-size: 14px; letter-spacing: 2px; opacity: 0.8; }
+        .dot { width: 5px; height: 5px; background: var(--maroon); border-radius: 50%; margin-right: 10px; display: inline-block; }
+        
+        .toggle-wrap { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono'; font-size: 11px; opacity: 0.6; }
+        .toggle { width: 36px; height: 18px; border-radius: 9px; background: rgba(240,234,214,0.08); position: relative; cursor: pointer; border: 0.5px solid rgba(240,234,214,0.12); }
         .toggle::after { content:''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text); transition: 0.3s; }
-        .toggle.on { background: var(--maroon); } .toggle.on::after { transform: translateX(18px); }
-
+        .toggle.on { background: var(--maroon); } .toggle.on::after { transform: translateX(18px); background: #fff; }
+        
         .layout { display: grid; grid-template-columns: 1fr 360px; max-width: 1400px; margin: 0 auto; padding: 120px 48px 48px; gap: 0; position: relative; z-index: 1; }
-        .left-panel { padding-right: 48px; border-right: 1px solid var(--border); }
-        .main-title { font-family: 'Syne', sans-serif; font-size: clamp(38px, 5vw, 74px); font-weight: 800; text-transform: uppercase; margin-bottom: 18px; line-height: 0.85; }
+        .left-panel { padding-right: 48px; border-right: 0.5px solid var(--border); }
+        .main-title { font-family: 'Syne', sans-serif; font-size: clamp(38px, 5vw, 64px); font-weight: 800; text-transform: uppercase; margin-bottom: 18px; line-height: 0.85; }
         .accent-word { color: var(--accent); }
-        .subtitle { font-size: 16px; opacity: 0.8; font-weight: 500; }
-        .badge { display: inline-flex; align-items: center; gap: 8px; font-family: 'Space Grotesk'; font-weight: 700; font-size: 11px; color: var(--maroon); border: 2px solid var(--maroon); padding: 6px 14px; margin-bottom: 24px; letter-spacing: 0.1em; }
-
-        .upload-panel { background: var(--panel); border: 2px solid var(--maroon); margin-top: 36px; position: relative; box-shadow: 20px 20px 0px var(--accent); }
+        .subtitle { font-size: 14px; opacity: 0.6; font-weight: 500; font-style: italic; }
+        .badge { display: inline-flex; align-items: center; gap: 6px; font-family: 'Space Grotesk'; font-weight: 700; font-size: 10px; color: var(--primary); border: 0.5px solid var(--primary); padding: 5px 12px; margin-bottom: 24px; letter-spacing: 0.18em; }
+        
+        .upload-panel { background: var(--panel); border: 0.5px solid var(--border); margin-top: 36px; position: relative; }
         .panel-corner { position: absolute; color: var(--accent); } .panel-corner.tl { top:0; left:0; } .panel-corner.tr { top:0; right:0; } .panel-corner.bl { bottom:0; left:0; } .panel-corner.br { bottom:0; right:0; }
+        .drop-zone { padding: 52px 48px; text-align: center; cursor: pointer; transition: 0.2s; margin: 20px; border: 1.5px dashed transparent; }
+        .drop-zone:hover { background: rgba(112, 28, 28, 0.05); border-color: var(--primary); }
         
-        .drop-zone { padding: 60px; text-align: center; cursor: pointer; transition: 0.3s; margin: 20px; border: 2px dashed var(--border); }
-        .drop-zone:hover { background: rgba(6, 148, 148, 0.1); border-color: var(--accent); }
-        .upload-icon-wrap-main { width: 72px; height: 72px; margin: 0 auto 28px; display: flex; align-items: center; justify-content: center; background: var(--maroon); color: white; border-radius: 50%; }
+        .upload-icon-wrap-main { width: 72px; height: 72px; margin: 0 auto 28px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .upload-icon-wrap-main::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; background: rgba(190, 81, 3, 0.15); }
+        .upload-icon-wrap-main svg { width: 48px; height: 48px; stroke: var(--primary); fill: none; stroke-width: 1.5; }
         
-        .drop-text { font-family: 'Syne'; font-weight: 800; font-size: 14px; letter-spacing: 1px; }
-        .panel-divider { height: 2px; background: var(--maroon); margin: 0 20px; }
+        .drop-text { font-family: 'Syne'; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text); }
+        .panel-divider { height: 0.5px; background: var(--border); margin: 0 20px; position: relative; }
+        .panel-divider::before { content: ''; position: absolute; left: 0; top: -0.5px; width: 40px; height: 1px; background: var(--maroon); opacity: 0.5; }
         
-        .file-list-section { padding: 24px; }
-        .file-list-label { font-family: 'Space Grotesk'; font-weight: 700; font-size: 12px; opacity: 0.6; margin-bottom: 12px; }
-        .file-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); margin-bottom: 8px; }
-        .file-name { font-size: 13px; font-weight: 600; font-family: 'Space Grotesk'; }
-        .file-size { font-family: 'JetBrains Mono'; font-size: 11px; opacity: 0.5; }
-        .file-remove { color: var(--maroon); cursor: pointer; font-weight: bold; }
+        .file-list-section { padding: 20px 28px; min-height: 80px; }
+        .file-list-label { font-family: 'Space Grotesk'; font-weight: 700; font-size: 10px; opacity: 0.3; margin-bottom: 12px; }
+        .file-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(128,128,128,0.05); border: 0.5px solid var(--border); margin-bottom: 8px; }
+        .file-name { font-size: 12px; font-weight: 700; color: var(--text); }
+        .file-size { font-family: 'JetBrains Mono'; font-size: 10px; opacity: 0.4; margin-top: 2px; }
+        .file-remove { color: var(--primary); cursor: pointer; transition: 0.15s; font-weight: bold; }
         
-        .upload-btn { width: 100%; padding: 22px; background: var(--maroon); border: none; color: white; font-family: 'Syne'; font-size: 15px; font-weight: 800; letter-spacing: 2px; cursor: pointer; transition: 0.2s; }
-        .upload-btn:hover { background: var(--accent); transform: scale(1.02); }
-        .upload-btn:disabled { opacity: 0.3; transform: none; }
-
-        .right-panel { padding-left: 48px; }
-        .status-label { font-family: 'Space Grotesk'; font-weight: 700; font-size: 12px; opacity: 0.4; letter-spacing: 2px; margin-bottom: 24px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
-        .status-card { background: var(--accent); color: white; padding: 30px; box-shadow: 10px 10px 0px var(--maroon); margin-bottom: 40px; }
-        .status-heading { font-family: 'Syne'; font-weight: 800; font-size: 20px; }
-        .status-sub { font-size: 12px; opacity: 0.8; margin-top: 4px; }
-        .mini-pct { font-family: 'Syne'; font-size: 54px; font-weight: 800; line-height: 1; margin-top: 15px; }
-
-        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono'; font-size: 12px; }
-        .stat-val.ok { color: var(--accent); font-weight: bold; }
-
-        .log-section { margin-top: 48px; }
-        .log-entries { font-family: 'JetBrains Mono'; font-size: 11px; opacity: 0.8; height: 180px; overflow-y: auto; }
-        .log-entry { margin-bottom: 8px; border-left: 2px solid var(--maroon); padding-left: 10px; }
+        .btn-section { padding: 16px 28px 28px; }
+        .upload-btn { width: 100%; padding: 18px 32px; background: var(--maroon); border: none; color: #fff; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 14px; }
+        .upload-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        
+        .right-panel { padding-left: 40px; padding-top: 52px; display: flex; flex-direction: column; }
+        .status-label { font-family: 'Space Grotesk'; font-weight: 700; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(240,234,214,0.25); margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+        .status-label::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+        .status-main { margin-bottom: 36px; }
+        .status-state { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        
+        .status-icon-wrap { width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+        .spinner-ring { position: absolute; top:0; left:0; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid rgba(112,28,28,0.2); border-top-color: var(--primary); animation: spin 0.8s linear infinite; }
+        .status-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 0.5px solid; z-index: 2; }
+        .status-icon.idle { border-color: rgba(240,234,214,0.12); background: rgba(240,234,214,0.04); }
+        .status-icon.idle svg { stroke: rgba(240,234,214,0.25); fill: none; stroke-width: 2; }
+        .status-icon.ready, .status-icon.success { border-color: var(--accent); background: rgba(6, 148, 148, 0.06); }
+        .status-icon.ready svg, .status-icon.success svg { stroke: #50c878; fill: none; stroke-width: 2; }
+        
+        .status-heading { font-family: 'Syne'; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 3px; }
+        .status-sub { font-family: 'Space Grotesk'; font-size: 10.5px; opacity: 0.6; line-height: 1.5; }
+        
+        .mini-pct { font-family: 'Syne'; font-size: 42px; font-weight: 900; color: var(--primary); letter-spacing: -0.04em; line-height: 1; margin-top: 10px; }
+        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid var(--border); font-family: 'JetBrains Mono'; font-size: 10px; }
+        .stat-val.ok { color: #50c878; } .stat-val.warn { color: var(--primary); }
+        
+        .log-section { margin-top: 36px; }
+        .log-label { font-family: 'Space Grotesk'; font-weight: 700; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.3; margin-bottom: 12px; }
+        .log-entries { display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto; font-family: 'JetBrains Mono'; font-size: 10.5px; }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 900px) {
           .layout { grid-template-columns: 1fr; padding: 100px 24px 24px; }
           .left-panel { border: none; padding: 0; }
-          .right-panel { padding: 48px 0; }
+          .right-panel { padding: 40px 0; }
         }
       `}</style>
     </div>
